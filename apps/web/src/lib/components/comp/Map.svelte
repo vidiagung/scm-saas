@@ -104,14 +104,11 @@
 		}).setView([-3.5, 117.5], 5);
 
 		// Dark tile — matches dark dashboard theme
-		L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-			maxZoom: 18
+		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			attribution: ''
 		}).addTo(map);
 
-		L.control
-			.attribution({ prefix: false })
-			.addAttribution('© <a href="https://carto.com" style="color:#52525b">CARTO</a>')
-			.addTo(map);
+		L.control.attribution({ prefix: false }).addAttribution('© OpenStreetMap').addTo(map);
 
 		// Ensure tiles render after container is painted
 		setTimeout(() => map.invalidateSize(), 150);
