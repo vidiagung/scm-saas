@@ -400,25 +400,17 @@
 			Supply chain map — live nodes
 		</Card.Title>
 		<div class="flex items-center gap-3">
-			{#each [{ label: 'OK', color: 'bg-emerald-500' }, { label: 'Warn', color: 'bg-amber-400' }, { label: 'Err', color: 'bg-red-500' }] as item}
+			{#each [{ label: 'OK', color: 'bg-emerald-500' }, { label: 'Warn', color: 'bg-amber-400' }, { label: 'Err', color: 'bg-red-500' }, { label: 'Sea', color: 'bg-blue-500' }, { label: 'Land', color: 'bg-zinc-500' }] as item}
 				<span class="flex items-center gap-1 font-mono text-[10px] text-zinc-500">
 					<span class="h-1.5 w-1.5 rounded-full {item.color}"></span>
 					{item.label}
 				</span>
 			{/each}
-			<span class="flex items-center gap-1 font-mono text-[10px] text-zinc-500">
-				<span class="inline-block w-4 border-t border-dashed border-blue-500"></span>
-				Laut
-			</span>
-			<span class="flex items-center gap-1 font-mono text-[10px] text-zinc-500">
-				<span class="inline-block w-4 border-t border-dashed border-zinc-500"></span>
-				Darat
-			</span>
 			<Badge
 				variant="outline"
 				class="border-zinc-700 px-1.5 py-0 font-mono text-[10px] text-zinc-500"
 			>
-				{points.length} nodes
+				{points.length} Nodes
 			</Badge>
 		</div>
 	</Card.Header>
