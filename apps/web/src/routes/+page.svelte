@@ -18,6 +18,7 @@
 		lng: number;
 		targetLat?: number;
 		targetLng?: number;
+		waypoints?: { lat: number; lng: number; type: 'land' | 'sea' }[];
 	}
 
 	interface LogEntry {
@@ -83,11 +84,43 @@
 			lat: -7.25,
 			lng: 112.75,
 			targetLat: -5.14,
-			targetLng: 119.43
+			targetLng: 119.43,
+			waypoints: [
+				// Darat: Surabaya → Pelabuhan Ketapang
+				{ lat: -7.25, lng: 112.75, type: 'land' },
+				{ lat: -8.155, lng: 114.375, type: 'land' },
+
+				// Laut: Ketapang → Gilimanuk
+				{ lat: -8.168, lng: 114.442, type: 'sea' },
+
+				// Darat: Gilimanuk → Padangbai (lintas Bali)
+				{ lat: -8.511, lng: 115.508, type: 'land' },
+
+				// Laut: Padangbai → Lembar
+				{ lat: -8.741, lng: 116.068, type: 'sea' },
+
+				// Darat: Lembar → Kayangan (lintas Lombok)
+				{ lat: -8.652, lng: 116.184, type: 'land' },
+				{ lat: -8.588, lng: 116.468, type: 'land' },
+				{ lat: -8.513, lng: 116.671, type: 'land' },
+
+				// Laut: Kayangan → Pototano (Selat Alas ~15km, straight line)
+				// Pototano ada di Sumbawa barat, koordinat jauh berbeda supaya tidak kena OSRM
+				{ lat: -8.37, lng: 116.98, type: 'sea' },
+
+				// Darat: Pototano → Sape (lintas Sumbawa)
+				{ lat: -8.37, lng: 117.02, type: 'land' },
+				{ lat: -8.569, lng: 118.993, type: 'land' },
+
+				// Laut: Sape → Makassar
+				{ lat: -5.14, lng: 119.43, type: 'sea' },
+
+				// Tiba Makassar
+				{ lat: -5.14, lng: 119.43, type: 'land' }
+			]
 		}
 	]);
 
-	// ✅ FIXED: include targetLat/targetLng so Map can animate trucks
 	let mapPoints = $derived(
 		nodes.map((n) => ({
 			id: n.id,
@@ -101,7 +134,8 @@
 			delay: n.delay,
 			stock: n.stock,
 			targetLat: n.targetLat,
-			targetLng: n.targetLng
+			targetLng: n.targetLng,
+			waypoints: n.waypoints
 		}))
 	);
 
@@ -235,7 +269,6 @@
 
 <div class="min-h-screen bg-[#0d0d0f] p-6 text-zinc-200">
 	<div class="mx-auto max-w-3xl space-y-3">
-		<!-- Toolbar -->
 		<div class="mb-2 flex flex-wrap items-center gap-2.5">
 			{#if running}
 				<span
@@ -272,7 +305,6 @@
 			<span class="ml-auto font-mono text-[11px] text-zinc-600">Tick: {tick}</span>
 		</div>
 
-		<!-- KPI -->
 		<div class="grid grid-cols-3 gap-2.5">
 			<div class="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3.5">
 				<p class="mb-1.5 font-mono text-[10px] tracking-widest text-zinc-600 uppercase">
@@ -312,7 +344,6 @@
 			</div>
 		</div>
 
-		<!-- Node cards -->
 		<div class="grid grid-cols-2 gap-2">
 			{#each nodes as node (node.id)}
 				<div
@@ -366,7 +397,6 @@
 			{/each}
 		</div>
 
-		<!-- Event log -->
 		<div class="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
 			<div
 				class="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-4 py-2.5"
@@ -394,7 +424,6 @@
 			</div>
 		</div>
 
-		<!-- Map -->
 		<Map points={mapPoints} />
 	</div>
 </div>
