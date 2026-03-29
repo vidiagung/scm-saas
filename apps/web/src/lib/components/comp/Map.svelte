@@ -14,6 +14,8 @@
 		speed?: number;
 		delay?: number;
 		stock?: number;
+		targetLat?: number;
+		targetLng?: number;
 	}
 
 	let { points = [] }: { points: MapPoint[] } = $props();
@@ -21,7 +23,7 @@
 	let container: HTMLDivElement;
 	let map: any = null;
 	let L: any = null;
-	let markers: any[] = [];
+	let markerMap = new Map<string, any>();
 
 	// ── Custom SVG marker ─────────────────────────────────────────────────────────
 	function makeIcon(type: MapPoint['type'], status: MapPoint['status']) {
@@ -90,7 +92,6 @@
 		const leaflet = await import('leaflet');
 		L = leaflet.default;
 
-		// Fix Vite asset path for default icons
 		delete (L.Icon.Default.prototype as any)._getIconUrl;
 		L.Icon.Default.mergeOptions({
 			iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -103,14 +104,12 @@
 			attributionControl: false
 		}).setView([-3.5, 117.5], 5);
 
-		// Dark tile — matches dark dashboard theme
 		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			attribution: ''
 		}).addTo(map);
 
 		L.control.attribution({ prefix: false }).addAttribution('© OpenStreetMap').addTo(map);
 
-		// Ensure tiles render after container is painted
 		setTimeout(() => map.invalidateSize(), 150);
 	});
 
@@ -118,29 +117,35 @@
 	$effect(() => {
 		if (!map || !L) return;
 
-		markers.forEach((m) => m.remove());
-		markers = [];
-
 		points.forEach((p) => {
 			if (p.lat == null || p.lng == null) return;
-			const marker = L.marker([p.lat, p.lng], { icon: makeIcon(p.type, p.status) })
-				.addTo(map)
-				.bindPopup(makePopup(p), { className: 'scm-popup', maxWidth: 220 });
-			markers.push(marker);
+
+			let marker = markerMap.get(p.id);
+
+			if (!marker) {
+				// buat marker sekali saja
+				marker = L.marker([p.lat, p.lng], {
+					icon: makeIcon(p.type, p.status)
+				})
+					.addTo(map)
+					.bindPopup(makePopup(p), { className: 'scm-popup', maxWidth: 220 });
+
+				markerMap.set(p.id, marker);
+			} else {
+				marker.setLatLng([p.lat, p.lng]);
+
+				marker.setIcon(makeIcon(p.type, p.status));
+
+				marker.setPopupContent(makePopup(p));
+			}
 		});
 
-		if (points.length === 1) {
-			map.setView([points[0].lat, points[0].lng], 7);
-		} else if (points.length > 1) {
-			const valid = points.filter((p) => p.lat != null && p.lng != null);
-			map.fitBounds(L.latLngBounds(valid.map((p) => [p.lat, p.lng])), { padding: [48, 48] });
-		}
-	});
-
-	onDestroy(() => {
-		if (map) {
-			map.remove();
-			map = null;
+		const ids = new Set(points.map((p) => p.id));
+		for (const [id, marker] of markerMap.entries()) {
+			if (!ids.has(id)) {
+				marker.remove();
+				markerMap.delete(id);
+			}
 		}
 	});
 </script>

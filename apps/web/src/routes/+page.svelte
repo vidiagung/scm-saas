@@ -17,6 +17,8 @@
 		status: NodeStatus;
 		lat: number;
 		lng: number;
+		targetLat?: number;
+		targetLng?: number;
 	}
 
 	interface LogEntry {
@@ -32,7 +34,6 @@
 	let disruptTarget = $state<string | null>(null);
 	let logs = $state<LogEntry[]>([]);
 
-	// ✅ Nodes now initialised with coordinates — required for map + simulator
 	let nodes = $state<SensorNode[]>([
 		{
 			id: 'WH-JKT',
@@ -67,8 +68,10 @@
 			speed: 76,
 			delay: 0,
 			status: 'ok',
-			lat: -7.0,
-			lng: 110.2
+			lat: -6.2,
+			lng: 106.8,
+			targetLat: -7.2,
+			targetLng: 112.7
 		},
 		{
 			id: 'TRK-002',
@@ -79,12 +82,13 @@
 			speed: 78,
 			delay: 0,
 			status: 'ok',
-			lat: -5.1,
-			lng: 119.4
+			lat: -7.2,
+			lng: 112.7,
+			targetLat: -5.1,
+			targetLng: 119.4
 		}
 	]);
 
-	// ✅ mapPoints includes all fields Map.svelte needs
 	let mapPoints = $derived(
 		nodes.map((n) => ({
 			id: n.id,
@@ -110,10 +114,11 @@
 		)
 	);
 	let activeShipments = $derived(247 + ((tick % 10) - 5));
-	let avgEtaDelta = $derived(
-		nodes.filter((n) => n.type === 'truck').reduce((a, n) => a + n.delay, 0)
-	);
-
+	let avgEtaDelta = $derived(() => {
+		const trucks = nodes.filter((n) => n.type === 'truck');
+		if (trucks.length === 0) return 0;
+		return Math.round(trucks.reduce((a, n) => a + n.delay, 0) / trucks.length);
+	});
 	// ── Simulation ───────────────────────────────────────────────────────────────
 	function rand(min: number, max: number) {
 		return min + Math.random() * (max - min);
@@ -127,31 +132,69 @@
 		logs = [{ ts, msg, level }, ...logs].slice(0, 30);
 	}
 
+	function moveTruck(s: SensorNode): SensorNode {
+		if (s.targetLat == null || s.targetLng == null) return s;
+
+		const dLat = s.targetLat - s.lat;
+		const dLng = s.targetLng - s.lng;
+
+		const distance = Math.sqrt(dLat * dLat + dLng * dLng);
+
+		if (distance > 0.03) {
+			const step = 0.03;
+
+			s.lat += (dLat / distance) * step;
+			s.lng += (dLng / distance) * step;
+		} else {
+			const tempLat = s.lat;
+			const tempLng = s.lng;
+
+			s.lat = s.targetLat;
+			s.lng = s.targetLng;
+
+			s.targetLat = tempLat;
+			s.targetLng = tempLng;
+		}
+
+		return s;
+	}
+
 	function simTick() {
 		if (!running) return;
 		tick++;
 
 		nodes = nodes.map((n) => {
-			const s = { ...n };
+			let s: SensorNode = { ...n };
+
 			if (disruptActive && s.id === disruptTarget) {
 				s.status = 'err';
 				s.delay = Math.min(s.delay + 5, 90);
-				if (s.type === 'truck') s.speed = Math.max(10, s.speed - 8);
+
+				if (s.type === 'truck') {
+					s.speed = Math.max(10, s.speed - 8);
+					s = moveTruck(s);
+				}
 			} else {
 				s.temp = clamp(s.temp + rand(-0.2, 0.2), 18, 32);
+
 				if (s.type === 'truck') {
 					s.speed = clamp(s.speed + rand(-4, 4), 40, 100);
 					s.delay = Math.max(0, s.delay - 1);
+
+					s = moveTruck(s);
 				} else {
 					s.stock = clamp(s.stock + rand(-10, 10), 50, 600);
 					s.delay = Math.max(0, s.delay - 1);
 				}
+
 				s.status = s.temp > 28 ? 'warn' : s.type === 'warehouse' && s.stock < 80 ? 'warn' : 'ok';
 			}
+
 			return s;
 		});
 
 		const roll = Math.random();
+
 		if (roll < 0.4) {
 			const n = nodes[Math.floor(Math.random() * nodes.length)];
 			if (n.type === 'truck')
@@ -161,6 +204,7 @@
 			const n = nodes[Math.floor(Math.random() * nodes.length)];
 			if (n.temp > 26) addLog(`WARN ${n.id} — suhu mendekati batas`, 'warn');
 		}
+
 		if (disruptActive && disruptTarget)
 			addLog(`ALERT ${disruptTarget} — disrupsi aktif! delay meningkat`, 'err');
 	}
@@ -266,7 +310,6 @@
 			<span class="ml-auto font-mono text-[11px] text-zinc-600">Tick: {tick}</span>
 		</div>
 
-		<!-- KPI Cards -->
 		<div class="grid grid-cols-3 gap-2.5">
 			<div class="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3.5">
 				<p class="mb-1.5 font-mono text-[10px] tracking-widest text-zinc-600 uppercase">
@@ -292,22 +335,21 @@
 				<p class="mb-1.5 font-mono text-[10px] tracking-widest text-zinc-600 uppercase">
 					Avg. ETA delta
 				</p>
-				<p class="text-[28px] leading-none font-semibold text-zinc-100 tabular-nums">
-					{avgEtaDelta > 0 ? '+' : ''}{avgEtaDelta}<span
-						class="ml-0.5 text-sm font-normal text-zinc-500">min</span
-					>
-				</p>
-				<p
-					class="mt-1.5 font-mono text-[11px] {avgEtaDelta > 20
-						? 'text-amber-600'
-						: 'text-zinc-600'}"
-				>
-					{avgEtaDelta > 20 ? 'delay tinggi' : 'normal'}
-				</p>
+				{#if true}
+					{@const eta = avgEtaDelta()}
+
+					<p class="text-[28px] leading-none font-semibold text-zinc-100 tabular-nums">
+						{eta > 0 ? '+' : ''}{eta}
+						<span class="ml-0.5 text-sm font-normal text-zinc-500">Min</span>
+					</p>
+
+					<p class="mt-1.5 font-mono text-[11px] {eta > 20 ? 'text-amber-600' : 'text-zinc-600'}">
+						{eta > 20 ? 'delay tinggi' : 'normal'}
+					</p>
+				{/if}
 			</div>
 		</div>
 
-		<!-- Node Cards -->
 		<div class="grid grid-cols-2 gap-2">
 			{#each nodes as node (node.id)}
 				<div
@@ -361,7 +403,6 @@
 			{/each}
 		</div>
 
-		<!-- Event Log -->
 		<div class="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
 			<div
 				class="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-4 py-2.5"
@@ -389,7 +430,6 @@
 				{/each}
 			</div>
 		</div>
-		<!-- Map — ✅ inside max-w-3xl container -->
 		<Map points={mapPoints} />
 	</div>
 </div>
