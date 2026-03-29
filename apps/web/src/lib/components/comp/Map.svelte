@@ -30,7 +30,7 @@
 		segIdx: number;
 		segProg: number;
 		bearing: number;
-		route: [number, number][]; // decoded from OSRM
+		route: [number, number][];
 		ready: boolean;
 	}
 
@@ -45,14 +45,10 @@
 		toLng: number
 	): Promise<[number, number][]> {
 		try {
-			// OSRM public demo server — no API key needed
 			const url = `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`;
 			const res = await fetch(url);
 			const json = await res.json();
-
 			if (json.code !== 'Ok' || !json.routes?.[0]) throw new Error('OSRM no route');
-
-			// GeoJSON coords are [lng, lat] — flip to [lat, lng]
 			return json.routes[0].geometry.coordinates.map(
 				([lng, lat]: [number, number]) => [lat, lng] as [number, number]
 			);
@@ -92,41 +88,48 @@
 	// ── Icons ─────────────────────────────────────────────────────────────────────
 	function makeWarehouseIcon(status: MapPoint['status']) {
 		const c = {
-			ok: { fill: '#052e16', stroke: '#16a34a', glow: '#22c55e33' },
-			warn: { fill: '#451a03', stroke: '#d97706', glow: '#f59e0b33' },
-			err: { fill: '#450a0a', stroke: '#dc2626', glow: '#ef444433' }
+			ok: { bg: '#052e16', stroke: '#16a34a', glow: '#22c55e33', icon: '#4ade80' },
+			warn: { bg: '#451a03', stroke: '#d97706', glow: '#f59e0b33', icon: '#fbbf24' },
+			err: { bg: '#450a0a', stroke: '#dc2626', glow: '#ef444433', icon: '#f87171' }
 		}[status];
 		return L.divIcon({
-			html: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-				<circle cx="16" cy="16" r="15" fill="${c.glow}"/>
-				<rect x="6" y="11" width="20" height="13" rx="2" fill="${c.fill}" stroke="${c.stroke}" stroke-width="1.5"/>
-				<polygon points="4,11 16,4 28,11" fill="${c.fill}" stroke="${c.stroke}" stroke-width="1.5"/>
-				<rect x="13" y="16" width="6" height="8" rx="1" fill="${c.stroke}" opacity="0.7"/>
-			</svg>`,
+			html: `<div style="width:36px;height:36px;position:relative">
+				<div style="
+					position:absolute;inset:0;border-radius:50%;
+					background:${c.glow};border:1.5px solid ${c.stroke};
+					background-color:${c.bg};
+					display:flex;align-items:center;justify-content:center;
+				">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="18" height="18" style="fill:${c.icon}">
+						<path d="M341.8 72.6C329.5 61.2 310.5 61.2 298.3 72.6L74.3 280.6C64.7 289.6 61.5 303.5 66.3 315.7C71.1 327.9 82.8 336 96 336L112 336L112 512C112 547.3 140.7 576 176 576L464 576C499.3 576 528 547.3 528 512L528 336L544 336C557.2 336 569 327.9 573.8 315.7C578.6 303.5 575.4 289.5 565.8 280.6L341.8 72.6zM304 384L336 384C362.5 384 384 405.5 384 432L384 528L256 528L256 432C256 405.5 277.5 384 304 384z"/>
+					</svg>
+				</div>
+			</div>`,
 			className: '',
-			iconSize: [32, 32],
-			iconAnchor: [16, 16],
-			popupAnchor: [0, -20]
+			iconSize: [36, 36],
+			iconAnchor: [18, 18],
+			popupAnchor: [0, -22]
 		});
 	}
 
 	function makeTruckIcon(status: MapPoint['status'], bearing: number) {
 		const c = {
-			ok: { fill: '#052e16', stroke: '#16a34a', glow: '#22c55e55' },
-			warn: { fill: '#451a03', stroke: '#d97706', glow: '#f59e0b55' },
-			err: { fill: '#450a0a', stroke: '#dc2626', glow: '#ef444455' }
+			ok: { bg: '#052e16', stroke: '#16a34a', glow: '#22c55e33', icon: '#4ade80' },
+			warn: { bg: '#451a03', stroke: '#d97706', glow: '#f59e0b33', icon: '#fbbf24' },
+			err: { bg: '#450a0a', stroke: '#dc2626', glow: '#ef444433', icon: '#f87171' }
 		}[status];
 		return L.divIcon({
 			html: `<div style="width:36px;height:36px;transform:rotate(${bearing}deg);transform-origin:50% 50%">
-				<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
-					<circle cx="18" cy="18" r="16" fill="${c.glow}"/>
-					<rect x="4"  y="14" width="20" height="10" rx="2.5" fill="${c.fill}" stroke="${c.stroke}" stroke-width="1.5"/>
-					<rect x="21" y="11" width="11" height="9"  rx="2"   fill="${c.fill}" stroke="${c.stroke}" stroke-width="1.5"/>
-					<rect x="23" y="13" width="7"  height="5"  rx="1"   fill="${c.stroke}" opacity="0.4"/>
-					<circle cx="9"  cy="24" r="3" fill="${c.stroke}"/>
-					<circle cx="24" cy="24" r="3" fill="${c.stroke}"/>
-					<polygon points="33,15.5 28,12 28,19" fill="${c.stroke}" opacity="0.95"/>
-				</svg>
+				<div style="
+					width:36px;height:36px;border-radius:50%;
+					background-color:${c.bg};border:1.5px solid ${c.stroke};
+					box-shadow:0 0 8px ${c.glow};
+					display:flex;align-items:center;justify-content:center;
+				">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" style="fill:${c.icon};transform:rotate(-90deg)">
+						<path d="M32 160C32 124.7 60.7 96 96 96L384 96C419.3 96 448 124.7 448 160L448 192L498.7 192C515.7 192 532 198.7 544 210.7L589.3 256C601.3 268 608 284.3 608 301.3L608 448C608 483.3 579.3 512 544 512L540.7 512C530.3 548.9 496.3 576 456 576C415.7 576 381.8 548.9 371.3 512L268.7 512C258.3 548.9 224.3 576 184 576C143.7 576 109.8 548.9 99.3 512L96 512C60.7 512 32 483.3 32 448L32 160zM544 352L544 301.3L498.7 256L448 256L448 352L544 352zM224 488C224 465.9 206.1 448 184 448C161.9 448 144 465.9 144 488C144 510.1 161.9 528 184 528C206.1 528 224 510.1 224 488zM456 528C478.1 528 496 510.1 496 488C496 465.9 478.1 448 456 448C433.9 448 416 465.9 416 488C416 510.1 433.9 528 456 528z"/>
+					</svg>
+				</div>
 			</div>`,
 			className: '',
 			iconSize: [36, 36],
@@ -145,10 +148,10 @@
 		const rows =
 			p.type === 'warehouse'
 				? `<tr><td style="color:#71717a;padding-right:12px">Stock</td><td>${Math.round(p.stock ?? 0)} unit</td></tr>
-			   <tr><td style="color:#71717a">Suhu</td><td>${p.temperature.toFixed(1)}°C</td></tr>`
+				   <tr><td style="color:#71717a">Suhu</td><td>${p.temperature.toFixed(1)}°C</td></tr>`
 				: `<tr><td style="color:#71717a;padding-right:12px">Speed</td><td>${Math.round(p.speed ?? 0)} km/h</td></tr>
-			   <tr><td style="color:#71717a">Delay</td><td>${p.delay ? '+' + p.delay + ' min' : 'On Time'}</td></tr>
-			   <tr><td style="color:#71717a">Suhu</td><td>${p.temperature.toFixed(1)}°C</td></tr>`;
+				   <tr><td style="color:#71717a">Delay</td><td>${p.delay ? '+' + p.delay + ' min' : 'On Time'}</td></tr>
+				   <tr><td style="color:#71717a">Suhu</td><td>${p.temperature.toFixed(1)}°C</td></tr>`;
 		return `<div style="font-family:ui-monospace,monospace;font-size:12px;background:#18181b;color:#e4e4e7;border:1px solid #3f3f46;border-radius:8px;padding:10px 12px;min-width:160px;line-height:1.7">
 			<div style="font-weight:600;font-size:13px;color:#f4f4f5;margin-bottom:4px">${p.name}</div>
 			<div style="margin-bottom:6px">${pill}</div>
@@ -157,7 +160,7 @@
 	}
 
 	// ── Animation loop ────────────────────────────────────────────────────────────
-	const STEP = 0.00045; // degree/frame — consistent visual speed
+	const STEP = 0.00045;
 
 	function animTick() {
 		for (const p of points) {
@@ -178,7 +181,7 @@
 			if (anim.segProg >= 1) {
 				anim.segIdx++;
 				anim.segProg = 0;
-				if (anim.segIdx >= route.length - 1) anim.segIdx = 0; // loop
+				if (anim.segIdx >= route.length - 1) anim.segIdx = 0;
 			}
 
 			const f = route[anim.segIdx];
@@ -210,7 +213,6 @@
 
 		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-		// Build all markers first (trucks start at origin while route loads)
 		for (const p of points) {
 			if (p.type === 'warehouse') {
 				const m = L.marker([p.lat, p.lng], { icon: makeWarehouseIcon(p.status) })
@@ -218,9 +220,7 @@
 					.bindPopup(makePopup(p), { className: 'scm-popup', maxWidth: 220 });
 				markerMap.set(p.id, m);
 			} else {
-				// Placeholder anim state — not ready yet
 				truckAnim.set(p.id, { segIdx: 0, segProg: 0, bearing: 90, route: [], ready: false });
-
 				const m = L.marker([p.lat, p.lng], { icon: makeTruckIcon(p.status, 90) })
 					.addTo(map)
 					.bindPopup(makePopup(p), { className: 'scm-popup', maxWidth: 220 });
@@ -228,15 +228,12 @@
 			}
 		}
 
-		// Start anim loop immediately (trucks with ready=false are skipped)
 		animFrame = requestAnimationFrame(animTick);
 
-		// Fetch OSRM routes async — trucks start moving as each route loads
 		for (const p of points) {
 			if (p.type !== 'truck' || p.targetLat == null || p.targetLng == null) continue;
 
 			fetchOSRMRoute(p.lat, p.lng, p.targetLat, p.targetLng).then((route) => {
-				// Draw route polyline
 				L.polyline(route, {
 					color: '#3f3f46',
 					weight: 2,
