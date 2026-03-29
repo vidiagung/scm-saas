@@ -3,7 +3,6 @@
 	import Map from '$lib/components/comp/Map.svelte';
 	import { ws } from '$lib/ws';
 
-	// ── Types ────────────────────────────────────────────────────────────────────
 	type NodeStatus = 'ok' | 'warn' | 'err';
 
 	interface SensorNode {
@@ -27,7 +26,6 @@
 		level: 'ok' | 'warn' | 'err' | 'info';
 	}
 
-	// ── State ────────────────────────────────────────────────────────────────────
 	let running = $state(true);
 	let tick = $state(0);
 	let disruptActive = $state(false);
@@ -56,8 +54,8 @@
 			speed: 0,
 			delay: 0,
 			status: 'ok',
-			lat: -7.2,
-			lng: 112.7
+			lat: -7.25,
+			lng: 112.75
 		},
 		{
 			id: 'TRK-001',
@@ -70,8 +68,8 @@
 			status: 'ok',
 			lat: -6.2,
 			lng: 106.8,
-			targetLat: -7.2,
-			targetLng: 112.7
+			targetLat: -7.25,
+			targetLng: 112.75
 		},
 		{
 			id: 'TRK-002',
@@ -82,13 +80,14 @@
 			speed: 78,
 			delay: 0,
 			status: 'ok',
-			lat: -7.2,
-			lng: 112.7,
-			targetLat: -5.1,
-			targetLng: 119.4
+			lat: -7.25,
+			lng: 112.75,
+			targetLat: -5.14,
+			targetLng: 119.43
 		}
 	]);
 
+	// ✅ FIXED: include targetLat/targetLng so Map can animate trucks
 	let mapPoints = $derived(
 		nodes.map((n) => ({
 			id: n.id,
@@ -100,11 +99,12 @@
 			type: n.type,
 			speed: n.speed,
 			delay: n.delay,
-			stock: n.stock
+			stock: n.stock,
+			targetLat: n.targetLat,
+			targetLng: n.targetLng
 		}))
 	);
 
-	// ── Derived KPIs ─────────────────────────────────────────────────────────────
 	let onTimeDelivery = $derived(
 		Math.max(
 			70,
@@ -119,44 +119,16 @@
 		if (trucks.length === 0) return 0;
 		return Math.round(trucks.reduce((a, n) => a + n.delay, 0) / trucks.length);
 	});
-	// ── Simulation ───────────────────────────────────────────────────────────────
+
 	function rand(min: number, max: number) {
 		return min + Math.random() * (max - min);
 	}
 	function clamp(v: number, min: number, max: number) {
 		return Math.max(min, Math.min(max, v));
 	}
-
 	function addLog(msg: string, level: LogEntry['level'] = 'info') {
 		const ts = new Date().toTimeString().slice(0, 8);
 		logs = [{ ts, msg, level }, ...logs].slice(0, 30);
-	}
-
-	function moveTruck(s: SensorNode): SensorNode {
-		if (s.targetLat == null || s.targetLng == null) return s;
-
-		const dLat = s.targetLat - s.lat;
-		const dLng = s.targetLng - s.lng;
-
-		const distance = Math.sqrt(dLat * dLat + dLng * dLng);
-
-		if (distance > 0.03) {
-			const step = 0.03;
-
-			s.lat += (dLat / distance) * step;
-			s.lng += (dLng / distance) * step;
-		} else {
-			const tempLat = s.lat;
-			const tempLng = s.lng;
-
-			s.lat = s.targetLat;
-			s.lng = s.targetLng;
-
-			s.targetLat = tempLat;
-			s.targetLng = tempLng;
-		}
-
-		return s;
 	}
 
 	function simTick() {
@@ -169,10 +141,8 @@
 			if (disruptActive && s.id === disruptTarget) {
 				s.status = 'err';
 				s.delay = Math.min(s.delay + 5, 90);
-
 				if (s.type === 'truck') {
 					s.speed = Math.max(10, s.speed - 8);
-					s = moveTruck(s);
 				}
 			} else {
 				s.temp = clamp(s.temp + rand(-0.2, 0.2), 18, 32);
@@ -180,8 +150,6 @@
 				if (s.type === 'truck') {
 					s.speed = clamp(s.speed + rand(-4, 4), 40, 100);
 					s.delay = Math.max(0, s.delay - 1);
-
-					s = moveTruck(s);
 				} else {
 					s.stock = clamp(s.stock + rand(-10, 10), 50, 600);
 					s.delay = Math.max(0, s.delay - 1);
@@ -194,7 +162,6 @@
 		});
 
 		const roll = Math.random();
-
 		if (roll < 0.4) {
 			const n = nodes[Math.floor(Math.random() * nodes.length)];
 			if (n.type === 'truck')
@@ -231,7 +198,6 @@
 		addLog('WebSocket terhubung ke 4 node', 'ok');
 		interval = setInterval(simTick, 2000);
 
-		// WebSocket from real backend — merges into nodes by id
 		ws.onmessage = (event) => {
 			const data = JSON.parse(event.data);
 			if (data.type === 'sensor_update') {
@@ -243,26 +209,22 @@
 	});
 	onDestroy(() => clearInterval(interval));
 
-	// ── Tailwind dynamic class helpers ───────────────────────────────────────────
 	function nodeCardBorder(status: NodeStatus) {
 		if (status === 'warn') return 'border-amber-500/30';
 		if (status === 'err') return 'border-red-500/40';
 		return 'border-zinc-800';
 	}
-
 	function statusDotBg(status: NodeStatus) {
 		if (status === 'warn') return 'bg-amber-400';
 		if (status === 'err') return 'bg-red-500';
 		return 'bg-emerald-500';
 	}
-
 	function logMsgColor(level: LogEntry['level']) {
 		if (level === 'ok') return 'text-emerald-400';
 		if (level === 'warn') return 'text-amber-400';
 		if (level === 'err') return 'text-red-400';
 		return 'text-zinc-300';
 	}
-
 	function logBadge(level: LogEntry['level']): { text: string; cls: string } {
 		if (level === 'ok') return { text: 'OK', cls: 'text-emerald-400 border-emerald-800' };
 		if (level === 'warn') return { text: 'WARN', cls: 'text-amber-400  border-amber-800' };
@@ -310,6 +272,7 @@
 			<span class="ml-auto font-mono text-[11px] text-zinc-600">Tick: {tick}</span>
 		</div>
 
+		<!-- KPI -->
 		<div class="grid grid-cols-3 gap-2.5">
 			<div class="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3.5">
 				<p class="mb-1.5 font-mono text-[10px] tracking-widest text-zinc-600 uppercase">
@@ -337,12 +300,11 @@
 				</p>
 				{#if true}
 					{@const eta = avgEtaDelta()}
-
 					<p class="text-[28px] leading-none font-semibold text-zinc-100 tabular-nums">
-						{eta > 0 ? '+' : ''}{eta}
-						<span class="ml-0.5 text-sm font-normal text-zinc-500">Min</span>
+						{eta > 0 ? '+' : ''}{eta}<span class="ml-0.5 text-sm font-normal text-zinc-500"
+							>Min</span
+						>
 					</p>
-
 					<p class="mt-1.5 font-mono text-[11px] {eta > 20 ? 'text-amber-600' : 'text-zinc-600'}">
 						{eta > 20 ? 'delay tinggi' : 'normal'}
 					</p>
@@ -350,6 +312,7 @@
 			</div>
 		</div>
 
+		<!-- Node cards -->
 		<div class="grid grid-cols-2 gap-2">
 			{#each nodes as node (node.id)}
 				<div
@@ -403,6 +366,7 @@
 			{/each}
 		</div>
 
+		<!-- Event log -->
 		<div class="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
 			<div
 				class="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-4 py-2.5"
@@ -412,7 +376,6 @@
 				>
 				<span class="font-mono text-[10px] text-zinc-600">{logs.length} events</span>
 			</div>
-
 			<div class="flex max-h-52 flex-col divide-y divide-zinc-800/60 overflow-y-auto">
 				{#each logs.slice(0, 20) as entry (entry.ts + entry.msg)}
 					{@const badge = logBadge(entry.level)}
@@ -430,6 +393,8 @@
 				{/each}
 			</div>
 		</div>
+
+		<!-- Map -->
 		<Map points={mapPoints} />
 	</div>
 </div>
