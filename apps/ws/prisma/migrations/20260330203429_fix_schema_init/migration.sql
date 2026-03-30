@@ -7,6 +7,9 @@ CREATE TYPE "NodeStatus" AS ENUM ('ok', 'warn', 'err');
 -- CreateEnum
 CREATE TYPE "NodeType" AS ENUM ('warehouse', 'truck');
 
+-- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('admin', 'viewer');
+
 -- CreateTable
 CREATE TABLE "alert_events" (
     "id" BIGSERIAL NOT NULL,
@@ -47,13 +50,15 @@ CREATE TABLE "sensor_events" (
 );
 
 -- CreateTable
-CREATE TABLE "User" (
+CREATE TABLE "users" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "passwordHash" TEXT NOT NULL,
-    "role" TEXT NOT NULL,
+    "password_hash" TEXT NOT NULL,
+    "role" "UserRole" NOT NULL DEFAULT 'viewer',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -66,7 +71,7 @@ CREATE INDEX "alert_events_level_resolved_idx" ON "alert_events"("level", "resol
 CREATE INDEX "sensor_events_node_id_time_idx" ON "sensor_events"("node_id", "time" DESC);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- AddForeignKey
 ALTER TABLE "alert_events" ADD CONSTRAINT "alert_events_node_id_fkey" FOREIGN KEY ("node_id") REFERENCES "nodes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
