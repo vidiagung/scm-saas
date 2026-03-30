@@ -1,0 +1,16 @@
+model AlertEvent {
+    id         BigInt     @default(autoincrement())
+    time       DateTime   @default(now()) @db.Timestamptz(6)
+    nodeId     String     @map("node_id")
+    level      AlertLevel
+    message    String
+    resolved   Boolean    @default(false)
+    resolvedAt DateTime?  @map("resolved_at") @db.Timestamptz(6)
+
+    node Node @relation(fields: [nodeId], references: [id])
+
+    @@id([id, time])
+    @@index([nodeId, time(sort: Desc)])
+    @@index([level, resolved])
+    @@map("alert_events")
+}

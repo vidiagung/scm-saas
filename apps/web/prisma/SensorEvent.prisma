@@ -1,0 +1,16 @@
+model SensorEvent {
+    id          BigInt     @default(autoincrement())
+    time        DateTime   @default(now()) @db.Timestamptz(6)
+    nodeId      String     @map("node_id")
+    temperature Float
+    stock       Float?
+    speed       Float?
+    delay       Int        @default(0)
+    status      NodeStatus
+
+    node Node @relation(fields: [nodeId], references: [id])
+
+    @@id([id, time])
+    @@index([nodeId, time(sort: Desc)])
+    @@map("sensor_events")
+}
