@@ -1,5 +1,4 @@
 <script lang="ts">
-	// apps/web/src/routes/login/+page.svelte
 	let email = $state('');
 	let password = $state('');
 	let error = $state('');
@@ -23,20 +22,17 @@
 			return;
 		}
 
-		// Redirect ke dashboard
 		window.location.href = '/';
 	}
 </script>
 
 <div class="flex min-h-screen items-center justify-center bg-[#0d0d0f] px-4">
 	<div class="w-full max-w-sm">
-		<!-- Header -->
 		<div class="mb-8 text-center">
 			<p class="font-mono text-xs tracking-widest text-zinc-600 uppercase">SCM SaaS</p>
 			<h1 class="mt-2 text-xl font-semibold text-zinc-100">Sign in</h1>
 		</div>
 
-		<!-- Form -->
 		<div class="space-y-3">
 			{#if error}
 				<div class="rounded-lg border border-red-900 bg-red-950/30 px-4 py-2.5">
@@ -78,7 +74,6 @@
 			</button>
 		</div>
 
-		<!-- Role info -->
 		<div class="mt-6 rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3">
 			<p class="mb-2 font-mono text-[10px] tracking-widest text-zinc-600 uppercase">Dev accounts</p>
 			<div class="space-y-1 font-mono text-xs text-zinc-500">
