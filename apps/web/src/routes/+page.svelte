@@ -235,9 +235,37 @@
 		ws.onmessage = (event) => {
 			const data = JSON.parse(event.data);
 			if (data.type === 'sensor_update') {
-				const p = data.payload;
-				nodes = nodes.map((n) => (n.id === p.id ? { ...n, ...p } : n));
-				addLog(`WS ${p.id} suhu=${p.temperature?.toFixed(1)}°C`, 'ok');
+				const payload = data.payload;
+				if (Array.isArray(payload)) {
+					// Merge WS data ke nodes — map temperature → temp, pertahankan waypoints dll
+					nodes = nodes.map((n) => {
+						const ws = payload.find((p: any) => p.id === n.id);
+						if (!ws) return n;
+						return {
+							...n,
+							temp: ws.temperature ?? n.temp,
+							stock: ws.stock ?? n.stock,
+							speed: ws.speed ?? n.speed,
+							delay: ws.delay ?? n.delay,
+							status: ws.status ?? n.status
+						};
+					});
+					const n = payload[Math.floor(Math.random() * payload.length)];
+					if (n.type === 'truck')
+						addLog(`GPS ${n.id} speed=${Math.round(n.speed)}km/h delay=${n.delay}min`, 'info');
+					else
+						addLog(
+							`SENSOR ${n.id} suhu=${n.temperature?.toFixed(1)}°C stok=${Math.round(n.stock)}`,
+							'ok'
+						);
+				}
+			}
+			if (data.type === 'snapshot') {
+				nodes = nodes.map((n) => {
+					const ws = data.payload.find((p: any) => p.node_id === n.id);
+					if (!ws) return n;
+					return { ...n, temp: ws.temperature ?? n.temp, status: ws.status ?? n.status };
+				});
 			}
 		};
 	});
