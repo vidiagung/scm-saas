@@ -1,0 +1,4 @@
+enum NodeType {
+    warehouse
+    truck
+}

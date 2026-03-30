@@ -1,0 +1,13 @@
+model Node {
+    id        String   @id
+    name      String
+    type      NodeType
+    lat       Float
+    lng       Float
+    createdAt DateTime @default(now()) @map("created_at")
+
+    sensorEvents SensorEvent[]
+    alertEvents  AlertEvent[]
+
+    @@map("nodes")
+}
