@@ -1,0 +1,23 @@
+version: '3.9'
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: scm_timescaledb
+    restart: unless-stopped
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_USER:     scm
+      POSTGRES_PASSWORD: scm123
+      POSTGRES_DB:       scm_saas
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U scm -d scm_saas']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  timescale_data:
