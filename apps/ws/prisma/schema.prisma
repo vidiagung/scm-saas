@@ -1,0 +1,72 @@
+generator client {
+    provider        = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+}
+
+model Node {
+    id        String   @id
+    name      String
+    type      NodeType
+    lat       Float
+    lng       Float
+    createdAt DateTime @default(now()) @map("created_at")
+
+    sensorEvents SensorEvent[]
+    alertEvents  AlertEvent[]
+
+    @@map("nodes")
+}
+
+enum NodeType {
+    warehouse
+    truck
+}
+
+model SensorEvent {
+    id          BigInt     @default(autoincrement())
+    time        DateTime   @default(now()) @db.Timestamptz(6)
+    nodeId      String     @map("node_id")
+    temperature Float
+    stock       Float?
+    speed       Float?
+    delay       Int        @default(0)
+    status      NodeStatus
+
+    node Node @relation(fields: [nodeId], references: [id])
+
+    @@id([id, time])
+    @@index([nodeId, time(sort: Desc)])
+    @@map("sensor_events")
+}
+
+model AlertEvent {
+    id         BigInt     @default(autoincrement())
+    time       DateTime   @default(now()) @db.Timestamptz(6)
+    nodeId     String     @map("node_id")
+    level      AlertLevel
+    message    String
+    resolved   Boolean    @default(false)
+    resolvedAt DateTime?  @map("resolved_at") @db.Timestamptz(6)
+
+    node Node @relation(fields: [nodeId], references: [id])
+
+    @@id([id, time])
+    @@index([nodeId, time(sort: Desc)])
+    @@index([level, resolved])
+    @@map("alert_events")
+}
+
+enum NodeStatus {
+    ok
+    warn
+    err
+}
+
+enum AlertLevel {
+    info
+    warn
+    err
+}
