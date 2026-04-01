@@ -1,42 +1,48 @@
-# sv
+# SCM SaaS — Web
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Frontend aplikasi SCM SaaS, dibangun dengan SvelteKit + Tailwind CSS v4 + shadcn-svelte.
 
-## Creating a project
+## Tech Stack
 
-If you're seeing this, you've probably already done this step. Congrats!
+- **Framework**: SvelteKit
+- **Styling**: Tailwind CSS v4
+- **UI Components**: shadcn-svelte
+- **Runtime**: Bun
 
-```sh
-# create a new project
-npx sv create my-app
-```
-
-To recreate this project with the same configuration:
+## Setup
 
 ```sh
-# recreate this project
-bun x sv@0.13.0 create --template minimal --types ts --add prettier eslint vitest="usages:unit,component" tailwindcss="plugins:none" sveltekit-adapter="adapter:auto" --install bun scm-saas
+bun install
 ```
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
 ```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+bun run dev
 ```
 
-## Building
+Buka di browser: `http://localhost:5173`
 
-To create a production version of your app:
+## Build
 
 ```sh
-npm run build
+bun run build
+bun run preview
 ```
 
-You can preview the production build with `npm run preview`.
+## Default Credentials
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+Jalankan seed di `apps/ws` terlebih dahulu:
+
+```sh
+cd ../ws
+bun run seed
+```
+
+Lalu cek output terminal untuk email & password default.
+
+## Recreate Project
+
+```sh
+bun x sv@0.13.0 create --template minimal --types ts --add prettier eslint tailwindcss="plugins:none" sveltekit-adapter="adapter:auto" --install bun scm-saas
+```
