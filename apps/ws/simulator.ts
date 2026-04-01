@@ -1,6 +1,8 @@
 import { broadcast } from "./server";
 import { prisma } from "./db";
 
+import { evaluateRisk } from "./risk-engine";
+
 // ── Node definitions (fixed positions, match DB seed) ────────────────────────
 const NODES = [
 	{ id: "WH-JKT", name: "Jakarta Warehouse", type: "warehouse" as const, lat: -6.2, lng: 106.8 },
@@ -78,13 +80,13 @@ function tick() {
 		return s;
 	} );
 
-	// 1. Broadcast ke semua WebSocket client (same format seperti sebelumnya)
 	broadcast( {
 		type: "sensor_update",
 		payload: state,
 	} );
 
-	// 2. Persist ke TimescaleDB — non-blocking
+	evaluateRisk(state);
+
 	persistSnapshot( state );
 
 	console.log( `[simulator] tick — ${state.length} nodes broadcasted & queued to DB` );
