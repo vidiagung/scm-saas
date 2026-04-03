@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
@@ -11,6 +12,15 @@
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	let { user }: { user: { name: string; email: string; avatar: string } } = $props();
 	const sidebar = useSidebar();
+
+	async function handleLogout() {
+		await fetch('/api/auth/logout', {
+			method: 'POST',
+			credentials: 'include'
+		});
+
+		goto('/login');
+	}
 </script>
 
 <Sidebar.Menu>
@@ -76,7 +86,7 @@
 					</DropdownMenu.Item>
 				</DropdownMenu.Group>
 				<DropdownMenu.Separator />
-				<DropdownMenu.Item>
+				<DropdownMenu.Item onclick={handleLogout}>
 					<LogOutIcon />
 					Log out
 				</DropdownMenu.Item>
