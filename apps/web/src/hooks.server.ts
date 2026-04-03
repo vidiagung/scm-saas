@@ -1,8 +1,6 @@
-// apps/web/src/hooks.server.ts
 import type { Handle } from '@sveltejs/kit';
 import { verifyJwt } from '$lib/server/auth';
 
-// Routes yang tidak perlu auth
 const PUBLIC_ROUTES = ['/login', '/api/auth/login', '/api/auth/register', '/'];
 
 export const handle: Handle = async ( { event, resolve } ) => {
@@ -21,7 +19,6 @@ export const handle: Handle = async ( { event, resolve } ) => {
 		}
 	}
 
-	// Redirect ke login kalau belum auth dan bukan public route
 	if ( !isPublic && !event.locals.user ) {
 		return new Response( null, {
 			status: 302,
@@ -29,7 +26,6 @@ export const handle: Handle = async ( { event, resolve } ) => {
 		} );
 	}
 
-	// Redirect ke dashboard kalau sudah login dan buka /login
 	if ( event.url.pathname === '/login' && event.locals.user ) {
 		return new Response( null, {
 			status: 302,

@@ -1,4 +1,3 @@
-// apps/web/src/routes/api/auth/login/+server.ts
 import { json } from '@sveltejs/kit';
 import { signJwt, verifyPassword } from '$lib/server/auth';
 import { prisma } from '$lib/server/db';
@@ -26,13 +25,12 @@ export async function POST( { request, cookies } ) {
 		role: user.role as 'admin' | 'viewer',
 	} );
 
-	// Set cookie httpOnly — tidak bisa diakses JS di client
 	cookies.set( 'scm_token', token, {
 		path: '/',
 		httpOnly: true,
 		sameSite: 'strict',
 		secure: process.env.NODE_ENV === 'production',
-		maxAge: 60 * 60 * 24, // 24 jam
+		maxAge: 60 * 60 * 24,
 	} );
 
 	return json( { ok: true, role: user.role } );
