@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import {
@@ -11,7 +12,6 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { cn } from '$lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
-
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
 	const id = $props.id();
 
@@ -28,7 +28,8 @@
 		const res = await fetch('/api/auth/login', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ email, password })
+			body: JSON.stringify({ email, password }),
+			credentials: 'include'
 		});
 
 		const data = await res.json();
@@ -39,7 +40,7 @@
 			return;
 		}
 
-		window.location.href = '/';
+		goto('/dashboard');
 	}
 </script>
 
@@ -49,21 +50,20 @@
 			<Card.Title class="text-xl">Welcome back</Card.Title>
 			<Card.Description>Login with your Apple or Google account</Card.Description>
 		</Card.Header>
-
 		<Card.Content>
 			<form onsubmit={login}>
 				<FieldGroup>
-					<Field class="grid grid-cols-2 gap-4">
-						<Button variant="outline" type="button" class="w-full">
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="mr-2 h-4 w-4">
+					<Field>
+						<Button variant="outline" type="button">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
 								<path
 									d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"
 									fill="currentColor"
 								/>
 							</svg>
-							Apple
+							Login with Apple
 						</Button>
-						<Button variant="outline" type="button" class="w-full">
+						<Button variant="outline" type="button">
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"
 								><path
 									fill="#fff"
@@ -82,25 +82,22 @@
 									d="M8.75 92.4q10.37-8 20.73-16.08A39.3 39.3 0 0044 95.74a37.16 37.16 0 0014.08 6.08 41.29 41.29 0 0015.1 0 36.16 36.16 0 0013.93-5.5c6.69 5.22 13.41 10.4 20.1 15.62a57.13 57.13 0 01-25.9 13.47 67.6 67.6 0 01-32.36-.35 63 63 0 01-23-11.59A63.73 63.73 0 018.75 92.4z"
 								/></svg
 							>
-							Google
+							Login with Google
 						</Button>
 					</Field>
-
 					<FieldSeparator class="*:data-[slot=field-separator-content]:bg-card">
 						Or continue with
 					</FieldSeparator>
-
-					{#if error}
-						<div class="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
-							<p class="text-xs text-destructive">{error}</p>
-						</div>
-					{/if}
-
 					<Field>
 						<FieldLabel for="email-{id}">Email</FieldLabel>
-						<Input id="email-{id}" type="email" placeholder="Email" bind:value={email} required />
+						<Input
+							id="email-{id}"
+							type="email"
+							placeholder="Your Email"
+							bind:value={email}
+							required
+						/>
 					</Field>
-
 					<Field>
 						<div class="flex items-center">
 							<FieldLabel for="password-{id}">Password</FieldLabel>
@@ -108,19 +105,31 @@
 								Forgot your password?
 							</a>
 						</div>
-						<Input id="password-{id}" type="password" bind:value={password} required />
+						<Input
+							id="password-{id}"
+							type="password"
+							placeholder="Password"
+							bind:value={password}
+							required
+						/>
 					</Field>
-
+					{#if error}
+						<p class="text-sm text-red-500">{error}</p>
+					{/if}
 					<Field>
-						<Button type="submit" class="w-full" disabled={loading}>
-							{loading ? 'Signing in...' : 'Login'}
+						<Button type="submit" disabled={loading}>
+							{loading ? 'Logging in...' : 'Login'}
 						</Button>
 						<FieldDescription class="text-center">
-							Don't have an account? <a href="##" class="underline underline-offset-4">Sign up</a>
+							Don't have an account? <a href="##">Sign up</a>
 						</FieldDescription>
 					</Field>
 				</FieldGroup>
 			</form>
 		</Card.Content>
 	</Card.Root>
+	<FieldDescription class="px-6 text-center">
+		By clicking continue, you agree to our <a href="##">Terms of Service</a>
+		and <a href="##">Privacy Policy</a>.
+	</FieldDescription>
 </div>
