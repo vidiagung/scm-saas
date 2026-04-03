@@ -350,7 +350,7 @@
 		</div>
 	</div>
 
-	<div class="scm-map-wrapper relative h-125 w-full">
+	<div class="scm-map-wrapper relative z-0 h-125 w-full">
 		<div bind:this={container} class="absolute inset-0 h-full w-full"></div>
 	</div>
 </div>
@@ -376,6 +376,12 @@
 	}
 	:global(.scm-popup .leaflet-popup-tip-container) {
 		display: none;
+	}
+	:global(.leaflet-control-container) {
+		z-index: 1 !important;
+	}
+	:global(.leaflet-pane) {
+		z-index: 0 !important;
 	}
 	:global(.scm-popup-content) {
 		font-family: ui-monospace, monospace;
