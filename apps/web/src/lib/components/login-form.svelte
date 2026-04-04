@@ -12,6 +12,7 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { cn } from '$lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
+	import ThemeToggle from '$lib/components/comp/ThemeToggle.svelte';
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
 	const id = $props.id();
 
@@ -45,6 +46,10 @@
 </script>
 
 <div class={cn('flex flex-col gap-6', className)} {...restProps}>
+	<div class="absolute top-4 right-4 z-10">
+		<ThemeToggle />
+	</div>
+
 	<Card.Root>
 		<Card.Header class="text-center">
 			<Card.Title class="text-xl">Welcome back</Card.Title>
