@@ -8,6 +8,7 @@
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import Map from '$lib/components/comp/Map.svelte';
 	import { ws } from '$lib/ws';
+	import ThemeToggle from '$lib/components/comp/ThemeToggle.svelte';
 
 	type NodeStatus = 'ok' | 'warn' | 'err';
 
@@ -324,6 +325,9 @@
 						</Breadcrumb.Item>
 					</Breadcrumb.List>
 				</Breadcrumb.Root>
+			</div>
+			<div class="ml-auto pr-4">
+				<ThemeToggle />
 			</div>
 		</header>
 
